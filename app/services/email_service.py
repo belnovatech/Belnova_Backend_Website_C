@@ -1,195 +1,87 @@
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
-from app.core.config import EMAIL, PASSWORD
+from app.core.config import SENDGRID_API_KEY, EMAIL
 
 
 def send_contact_email(data):
 
-    server = smtplib.SMTP("smtpout.secureserver.net", 587)
-    server.starttls()
-    server.login(EMAIL, PASSWORD)
+    sg = SendGridAPIClient(SENDGRID_API_KEY)
 
-    # ==========================================
-    # ADMIN EMAIL (To Belnova)
-    # ==========================================
-
-    admin = MIMEMultipart("alternative")
-
-    admin["From"] = EMAIL
-    admin["To"] = EMAIL
-    admin["Subject"] = f" New Website Enquiry - {data.subject}"
+    # ==========================
+    # Admin Email
+    # ==========================
 
     admin_html = f"""
-    <!DOCTYPE html>
-    <html>
-    <body style="margin:0;padding:30px;background:#f5f7fb;font-family:Arial,sans-serif;">
+    <h2>New Contact Form Submission</h2>
 
-    <table width="650" align="center"
-    style="background:#ffffff;border-radius:10px;border:1px solid #e5e5e5;">
+    <p><b>Name:</b> {data.name}</p>
+    <p><b>Email:</b> {data.email}</p>
+    <p><b>Phone:</b> {data.phone}</p>
+    <p><b>Subject:</b> {data.subject}</p>
+    <p><b>Message:</b></p>
 
-    <tr>
-    <td style="background:#081b3a;padding:25px;text-align:center;">
-
-    <h1 style="color:white;margin:0;">
-     New Contact Form Submission
-    </h1>
-
-    </td>
-    </tr>
-
-    <tr>
-    <td style="padding:30px;">
-
-    <table width="100%" cellpadding="10" cellspacing="0">
-
-    <tr>
-        <td><b>Name</b></td>
-        <td>{data.name}</td>
-    </tr>
-
-    <tr>
-        <td><b>Email</b></td>
-        <td>{data.email}</td>
-    </tr>
-
-    <tr>
-        <td><b>Phone</b></td>
-        <td>{data.phone}</td>
-    </tr>
-
-    <tr>
-        <td><b>Subject</b></td>
-        <td>{data.subject}</td>
-    </tr>
-
-    <tr>
-        <td valign="top"><b>Message</b></td>
-        <td>{data.message}</td>
-    </tr>
-
-    </table>
-
-    </td>
-    </tr>
-
-    <tr>
-    <td style="background:#f3f3f3;padding:18px;text-align:center;color:#666;">
-    Belnova Technologies • Hyderabad
-    </td>
-    </tr>
-
-    </table>
-
-    </body>
-    </html>
+    <p>{data.message}</p>
     """
 
-    admin.attach(MIMEText(admin_html, "html"))
-
-    server.sendmail(
-        EMAIL,
-        EMAIL,
-        admin.as_string()
+    admin_mail = Mail(
+        from_email=EMAIL,
+        to_emails=EMAIL,
+        subject=f"New Website Enquiry - {data.subject}",
+        html_content=admin_html
     )
 
-    # ==========================================
-    # CUSTOMER AUTO REPLY
-    # ==========================================
+    sg.send(admin_mail)
 
-    reply = MIMEMultipart("alternative")
+    # ==========================
+    # Customer Auto Reply
+    # ==========================
 
-    reply["From"] = EMAIL
-    reply["To"] = data.email
-    reply["Subject"] = "Thank You for Contacting Belnova Technologies"
-
-    html = f"""
-    <!DOCTYPE html>
+    customer_html = f"""
     <html>
 
-    <body style="margin:0;padding:30px;background:#f5f7fb;font-family:Arial,sans-serif;">
-
-    <table width="650" align="center"
-    style="background:#ffffff;border-radius:10px;border:1px solid #e5e5e5;">
-
-    <tr>
-
-    <td style="background:#081b3a;padding:35px;text-align:center;">
-
-    <h1 style="color:white;margin:0;">
-    Belnova Technologies
-    </h1>
-
-    <p style="color:#d7e4ff;">
-    Thank you for contacting us
-    </p>
-
-    </td>
-
-    </tr>
-
-    <tr>
-
-    <td style="padding:35px;">
+    <body
+    style="font-family:Arial;
+    background:#f5f7fb;
+    padding:30px;">
 
     <h2>Hello {data.name},</h2>
 
-    <p style="line-height:28px;color:#444;">
+    <p>
 
     Thank you for contacting
-    <strong>Belnova Technologies.</strong>
-
-    <br><br>
-
-    We have successfully received your enquiry.
-
-    <br><br>
-
-    Our team will review your request and get back to you within
-    <strong>24 hours.</strong>
+    <b>Belnova Technologies.</b>
 
     </p>
 
-    <table
-    width="100%"
-    style="margin-top:25px;
-    background:#f7f9fc;
-    border-left:4px solid #081b3a;
-    padding:15px;">
+    <p>
 
-    <tr>
-    <td>
+    We have received your enquiry.
 
-    <strong>Your Submission</strong>
+    </p>
 
-    <br><br>
+    <p>
 
-    Subject:
-    <strong>{data.subject}</strong>
-
-    <br><br>
-
-    Message:
-
-    <br>
-
-    {data.message}
-
-    </td>
-    </tr>
-
-    </table>
-
-    <p style="margin-top:30px;line-height:28px;">
-
-    If your enquiry is urgent, please contact us directly.
+    Our team will contact you within
+    <b>24 hours.</b>
 
     </p>
 
     <hr>
 
-    <p>
+    <b>Your Subject:</b>
+
+    {data.subject}
+
+    <br><br>
+
+    <b>Your Message:</b>
+
+    <br>
+
+    {data.message}
+
+    <br><br>
 
     📞 +91 7382405380
 
@@ -197,43 +89,16 @@ def send_contact_email(data):
 
     📧 info@belnovatech.com
 
-    <br>
-
-    📍 Hyderabad, Telangana, India
-
-    </p>
-
-    </td>
-
-    </tr>
-
-    <tr>
-
-    <td style="background:#081b3a;color:white;padding:20px;text-align:center;">
-
-    © 2026 Belnova Technologies
-
-    <br>
-
-    Building Intelligent Digital Solutions
-
-    </td>
-
-    </tr>
-
-    </table>
-
     </body>
 
     </html>
     """
 
-    reply.attach(MIMEText(html, "html"))
-
-    server.sendmail(
-        EMAIL,
-        data.email,
-        reply.as_string()
+    reply_mail = Mail(
+        from_email=EMAIL,
+        to_emails=data.email,
+        subject="Thank You for Contacting Belnova Technologies",
+        html_content=customer_html
     )
 
-    server.quit()
+    sg.send(reply_mail)
