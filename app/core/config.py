@@ -4,4 +4,4 @@ import os
 load_dotenv()
 
 EMAIL = os.getenv("EMAIL")
-PASSWORD = os.getenv("PASSWORD")
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
