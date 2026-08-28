@@ -2,6 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes.contact import router
+from app.database import engine, Base
+from app.models.contact import ContactSubmission
+
+# Create database tables automatically
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Belnova Mail Notification API",
